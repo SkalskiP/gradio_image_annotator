@@ -1,14 +1,14 @@
 
 import gradio as gr
-from gradio_image_annotator import image_annotator
+from gradio_image_annotator import ImageAnnotator
 
 
-example = image_annotator().example_inputs()
+example = ImageAnnotator().example_inputs()
 
 demo = gr.Interface(
     lambda x:x,
-    image_annotator(),  # interactive version of your component
-    image_annotator(),  # static version of your component
+    ImageAnnotator(),  # interactive version of your component
+    ImageAnnotator(),  # static version of your component
     # examples=[[example]],  # uncomment this line to view the "example version" of your component
 )
 

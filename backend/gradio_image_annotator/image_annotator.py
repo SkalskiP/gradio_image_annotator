@@ -21,7 +21,7 @@ _Image.init()  # fixes https://github.com/gradio-app/gradio/issues/2843
 
 
 @document()
-class image_annotator(StreamingInput, Component):
+class ImageAnnotator(StreamingInput, Component):
     """
     Creates an image component that can be used to upload images (as an input) or display images (as an output).
     Preprocessing: passes the uploaded image as a {numpy.array}, {PIL.Image} or {str} filepath depending on `type`. For SVGs, the `type` parameter is ignored and the filepath of the SVG is returned.
@@ -70,7 +70,7 @@ class image_annotator(StreamingInput, Component):
     ):
         """
         Parameters:
-            value: A PIL image_annotator, numpy array, path or URL for the default value that image_annotator component is going to take. If callable, the function will be called whenever the app loads to set the initial value of the component.
+            value: A PIL ImageAnnotator, numpy array, path or URL for the default value that ImageAnnotator component is going to take. If callable, the function will be called whenever the app loads to set the initial value of the component.
             height: Height of the displayed image in pixels.
             width: Width of the displayed image in pixels.
             image_mode: "RGB" if color, or "L" if black and white. See https://pillow.readthedocs.io/en/stable/handbook/concepts.html for other supported image modes and their meaning.
@@ -120,7 +120,7 @@ class image_annotator(StreamingInput, Component):
         self.show_download_button = show_download_button
         if streaming and self.sources != ["webcam"]:
             raise ValueError(
-                "image_annotator streaming only available if sources is ['webcam']. Streaming not supported with multiple sources."
+                "ImageAnnotator streaming only available if sources is ['webcam']. Streaming not supported with multiple sources."
             )
         self.show_share_button = (
             (utils.get_space() is not None)
@@ -188,7 +188,7 @@ class image_annotator(StreamingInput, Component):
     def check_streamable(self):
         if self.streaming and self.sources != ["webcam"]:
             raise ValueError(
-                "image_annotator streaming only available if sources is ['webcam']. Streaming not supported with multiple sources."
+                "ImageAnnotator streaming only available if sources is ['webcam']. Streaming not supported with multiple sources."
             )
 
     def as_example(self, input_data: str | Path | None) -> str | None:
