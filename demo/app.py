@@ -13,7 +13,7 @@ example = ImageAnnotator().example_inputs()
 
 with gr.Blocks() as demo:
     with gr.Row():
-        gr.ImageEditor()
+        # ImageAnnotator()
         ImageAnnotator()
 
 demo.launch()

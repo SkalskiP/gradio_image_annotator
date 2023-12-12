@@ -15,6 +15,9 @@
 	import { Upload } from "@gradio/upload";
 	import { type FileData, normalise_file } from "@gradio/client";
 	import ClearImage from "./ClearImage.svelte";
+	import {Point, Rect} from "./utils/types";
+	import {snap_point_to_rect} from "./utils/rect";
+	import {clear_canvas, draw_rect} from "./utils/draw";
 
 	export let value: null | FileData;
 	export let label: string | undefined = undefined;
@@ -33,6 +36,8 @@
 	export let i18n: I18nFormatter;
 
 	let upload: Upload;
+	let image: HTMLImageElement;
+	let canvas: HTMLCanvasElement;
 	let uploading = false;
 	export let active_tool: "webcam" | null = null;
 
@@ -68,6 +73,9 @@
 	}>();
 
 	let dragging = false;
+	let drawing = false;
+	let start_point: Point | null = null;
+	let boxes: Rect[] = []
 
 	$: dispatch("drag", dragging);
 
@@ -75,6 +83,58 @@
 		let coordinates = get_coordinates_of_clicked_image(evt);
 		if (coordinates) {
 			dispatch("select", { index: coordinates, value: null });
+		}
+	}
+
+	export const get_coordinates_on_canvas = (evt: MouseEvent): Point | null => {
+		let canvas = evt.target as HTMLCanvasElement;
+		let rect = canvas.getBoundingClientRect();
+		let x = Math.round(evt.clientX - rect.left);
+		let y = Math.round(evt.clientY - rect.top);
+		return {x, y}
+	}
+
+	function handle_canvas_click(evt: MouseEvent): void {
+		let coordinates = get_coordinates_on_canvas(evt);
+		if (drawing) {
+			boxes.push({
+				x: start_point.x,
+				y: start_point.y,
+				width: coordinates.x - start_point.x,
+				height: coordinates.y - start_point.y
+			});
+			drawing = false;
+			start_point = null;
+		}
+		else {
+			drawing = true;
+			start_point = coordinates;
+		}
+	}
+
+	function handleImageLoad() {
+		if (canvas && value !== null && !streaming) {
+			canvas.width = canvas.clientWidth;
+			canvas.height = canvas.clientHeight;
+		}
+	}
+
+	function handle_canvas_move(evt: MouseEvent): void {
+		let canvas = evt.target as HTMLCanvasElement;
+		if (drawing) {
+			let coordinates = get_coordinates_on_canvas(evt);
+			coordinates = snap_point_to_rect(coordinates, {x: 0, y: 0, width: canvas.width, height: canvas.height});
+			clear_canvas(canvas);
+			for (let i = 0; i < boxes.length; i++) {
+				let box = boxes[i];
+				draw_rect(canvas, box, "#FFFFFF", 2)
+			}
+			draw_rect(canvas, {
+				x: start_point.x,
+				y: start_point.y,
+				width: coordinates.x - start_point.x,
+				height: coordinates.y - start_point.y
+			}, "#FF6600", 2)
 		}
 	}
 
@@ -181,12 +241,18 @@
 				{i18n}
 			/>
 		{:else if value !== null && !streaming}
-			<!-- svelte-ignore a11y-click-events-have-key-events-->
-			<!-- svelte-ignore a11y-no-noninteractive-element-interactions-->
+			<canvas
+				bind:this={canvas}
+				on:click={handle_canvas_click}
+				on:mousemove={handle_canvas_move}
+				class:selectable
+			/>
 			<img
+				bind:this={image}
 				src={value.url}
 				alt={value.alt_text}
 				on:click={handle_click}
+				on:load={handleImageLoad}
 				class:selectable
 			/>
 		{/if}
@@ -213,6 +279,12 @@
 	img {
 		width: var(--size-full);
 		height: var(--size-full);
+	}
+	canvas {
+		width: var(--size-full);
+		height: var(--size-full);
+		position: absolute;
+		cursor: crosshair;
 	}
 
 	.upload-container {
